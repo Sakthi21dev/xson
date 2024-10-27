@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dev.utility.dev_utility.PrimaryController">
+   <top>
+      <HBox alignment="CENTER_LEFT" spacing="5.0" BorderPane.alignment="TOP_LEFT">
+         <children>
+            <Region layoutX="300.0" layoutY="15.0" prefHeight="25.0" prefWidth="80.0" />
+            <Label fx:id="fileNameLabel" />
+            <Button mnemonicParsing="false" onAction="#loadFile" text="Choose file" />
+            <RadioButton mnemonicParsing="false" text="XPath" fx:id="xpath">
+               <toggleGroup>
+                  <ToggleGroup fx:id="groupExpression" />
+               </toggleGroup></RadioButton>
+            <RadioButton mnemonicParsing="false" text="XQuery" toggleGroup="$groupExpression" fx:id="xQuery" />
+            <RadioButton fx:id="jsonPath" mnemonicParsing="false" text="JPath" toggleGroup="$groupExpression" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button mnemonicParsing="false" onAction="#formatContent" text="Format" HBox.hgrow="ALWAYS" />
+            <Button mnemonicParsing="false" onAction="#clearAllText" text="Clear" />
+            <Button mnemonicParsing="false" onAction="#decreaseFontSize" text="A-" />
+            <Button mnemonicParsing="false" onAction="#increaseFontSize" text="A+" />
+            <Region layoutX="300.0" layoutY="15.0" HBox.hgrow="ALWAYS" />
+         </children>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </HBox>
+   </top>
+   <center>
+      <SplitPane dividerPositions="0.75" BorderPane.alignment="CENTER">
+        <items>
+            <SplitPane dividerPositions="0.1" orientation="VERTICAL">
+               <items>
+                  <TextArea fx:id="expression" promptText="Enter Query or Path ...." />
+                  <TextArea fx:id="editor" promptText="Choose a file or paste XML / JSON here to execute expressions..." />
+               </items>
+            </SplitPane>
+            <TextArea fx:id="resultBox" editable="false" layoutX="10.0" layoutY="10.0" promptText="Your result will be here.... Add some  XML / JSON and expression" />
+        </items>
+      </SplitPane>
+   </center>
+</BorderPane>
