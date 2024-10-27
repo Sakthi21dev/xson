@@ -18,7 +18,7 @@
             <Region layoutX="300.0" layoutY="15.0" prefHeight="25.0" prefWidth="80.0" />
             <Label fx:id="fileNameLabel" />
             <Button mnemonicParsing="false" onAction="#loadFile" text="Choose file" />
-            <RadioButton mnemonicParsing="false" text="XPath" fx:id="xpath">
+            <RadioButton mnemonicParsing="false" text="XPath" fx:id="xPath">
                <toggleGroup>
                   <ToggleGroup fx:id="groupExpression" />
                </toggleGroup></RadioButton>

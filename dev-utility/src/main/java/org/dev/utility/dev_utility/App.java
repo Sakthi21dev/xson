@@ -12,16 +12,20 @@ import java.io.IOException;
 /**
  * JavaFX App
  */
+
+
+
 public class App extends Application {
 
     private static Scene scene;
-
+    
+    
     @Override
     public void start(Stage stage) throws IOException {
         scene = new Scene(loadFXML("home"), 640, 480);
         stage.setScene(scene);
         stage.show();
-        stage.getIcons().add(new Image(getClass().getResource("img/icon.png").toExternalForm()));
+        stage.getIcons().add(new Image(getClass().getResource("/org/dev/utility/dev_utility/img/icon.png").toExternalForm()));
         stage.setTitle("Utility");
     }
 
@@ -30,16 +34,15 @@ public class App extends Application {
     }
 
     private static Parent loadFXML(String fxml) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("/org/dev/utility/dev_utility/" + fxml + ".fxml"));
         return fxmlLoader.load();
     }
 
     public static void main(String[] args) {
         launch();
     }
-    
-    public static Scene getRoot() {
-      return scene;
-    }
 
+    public static Scene getRoot() {
+        return scene;
+    }
 }

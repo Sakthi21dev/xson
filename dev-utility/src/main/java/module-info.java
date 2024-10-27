@@ -6,6 +6,7 @@ module org.dev.utility.dev_utility {
   requires com.fasterxml.jackson.databind;
   requires java.xml;
   requires json.path;
+  requires java.logging;
 
   opens org.dev.utility.dev_utility to javafx.fxml;
 
