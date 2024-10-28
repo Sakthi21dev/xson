@@ -1,1 +1,5 @@
 /target/
+/.classpath
+/.project
+/dependency-reduced-pom.xml
+/dev-utility.7z

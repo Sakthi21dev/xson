@@ -63,6 +63,9 @@ public class PrimaryController {
   RadioButton jsonPath;
 
   @FXML
+  RadioButton advJPath;
+
+  @FXML
   TextArea editor;
 
   @FXML
@@ -76,6 +79,9 @@ public class PrimaryController {
 
   @FXML
   Label fileNameLabel;
+
+  @FXML
+  TextArea jPathRegex;
 
   FileType fileType;
 
@@ -95,19 +101,33 @@ public class PrimaryController {
 
     groupExpression.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
       if (newToggle != null) {
+        jPathRegex.setDisable(!advJPath.isSelected());
         executeExpression();
+      } else {
+        jPathRegex.setDisable(true);
       }
     });
 
+    jPathRegex.textProperty().addListener((observable) -> {
+      advJPath.setSelected(true);
+    });
+
     editor.textProperty().addListener((observable, oldValue, newValue) -> {
-      char delimiter = newValue.trim().charAt(0);
+      String value = newValue.trim();
+      if (value.isBlank()) {
+        return;
+      }
+      char delimiter = value.charAt(0);
       if (delimiter == '<') {
         fileType = FileType.XML;
-        if (jsonPath.isSelected() || groupExpression.getSelectedToggle() == null)
+        if (jsonPath.isSelected() || advJPath.isSelected()
+            || groupExpression.getSelectedToggle() == null)
           xPath.setSelected(true);
       } else if (delimiter == '{' || delimiter == '[') {
         fileType = FileType.JSON;
-        jsonPath.setSelected(true);
+        if (xPath.isSelected() || xQuery.isSelected()
+            || groupExpression.getSelectedToggle() == null)
+          jsonPath.setSelected(true);
       }
     });
 
@@ -196,6 +216,9 @@ public class PrimaryController {
     String content = editor.getText();
     if (expression == null || expression.isBlank() || content == null || content.isBlank())
       return;
+    String regex = null;
+    if (advJPath.isSelected())
+      regex = jPathRegex.getText();
 
     String result = null;
 
@@ -203,10 +226,17 @@ public class PrimaryController {
       result = executeXpath(content, expression);
     else if (xQuery.isSelected())
       result = executeXQuery(content, expression);
-    else
+    else if (jsonPath.isSelected())
       result = executeJsonPath(content, expression);
-
+    else if (advJPath.isSelected()) {
+      result = executeAdvacedJsonPath(content, expression, regex);
+    }
     resultBox.setText(result);
+  }
+
+  private String executeAdvacedJsonPath(String content, String expression, String regex) {
+    // TODO Auto-generated method stub
+    return "!!!--IN DEVELOPMENT--!!!";
   }
 
   public String executeXpath(String xml, String expression) {
@@ -244,12 +274,12 @@ public class PrimaryController {
   public String executeJsonPath(String json, String expression) {
 
     try {
-      
+
       Object result = JsonPath.using(jsonReadConfig).parse(json).read(expression);
       JsonNode resultNode = null;
       if (result == null)
         return null;
-      else if (result instanceof JsonNode ){  
+      else if (result instanceof JsonNode) {
         resultNode = (JsonNode) result;
         return resultNode.toPrettyString();
       }
@@ -266,6 +296,7 @@ public class PrimaryController {
   }
 
   public void decreaseFontSize() {
+
     AppData.fontSize = AppData.fontSize - 2;
     String fontSizeStyle = setFontSize(AppData.fontSize);
     changeFontSizeToTextAreaGroup(fontSizeStyle);
@@ -275,12 +306,16 @@ public class PrimaryController {
     editor.clear();
     expression.clear();
     resultBox.clear();
+    jPathRegex.clear();
+    fileNameLabel.setText(null);
+//    groupExpression.selectToggle(null);
   }
 
   public void changeFontSizeToTextAreaGroup(String fontSizeStyle) {
     editor.setStyle(fontSizeStyle);
     expression.setStyle(fontSizeStyle);
     resultBox.setStyle(fontSizeStyle);
+    jPathRegex.setStyle(fontSizeStyle);
   }
 
   public static String setFontSize(double fontSize) {
