@@ -10,11 +10,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
@@ -33,6 +35,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
@@ -63,7 +66,7 @@ public class PrimaryController {
   RadioButton jsonPath;
 
   @FXML
-  RadioButton advJPath;
+  RadioButton advancedJsonPath;
 
   @FXML
   TextArea editor;
@@ -83,6 +86,9 @@ public class PrimaryController {
   @FXML
   TextArea jPathRegex;
 
+  @FXML
+  CheckBox setCurrentNode;
+  
   FileType fileType;
 
   Configuration jsonReadConfig = Configuration.builder()
@@ -93,15 +99,28 @@ public class PrimaryController {
 
   @FXML
   public void initialize() {
-    pause = new PauseTransition(Duration.millis(100));
+    pause = new PauseTransition(Duration.millis(1000));
     pause.setOnFinished(event -> executeExpression());
+    
     expression.setOnKeyReleased(event -> {
       pause.playFromStart();
     });
 
+    advancedJsonPath.setOnKeyReleased(event -> {
+      pause.playFromStart();
+    });
+    
+    editor.setOnKeyReleased(event -> {
+      pause.playFromStart();
+    });
+    
+    setCurrentNode.selectedProperty().addListener((observable)->{
+      executeExpression();
+    });
+    
     groupExpression.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
       if (newToggle != null) {
-        jPathRegex.setDisable(!advJPath.isSelected());
+        jPathRegex.setDisable(!advancedJsonPath.isSelected());
         executeExpression();
       } else {
         jPathRegex.setDisable(true);
@@ -109,7 +128,7 @@ public class PrimaryController {
     });
 
     jPathRegex.textProperty().addListener((observable) -> {
-      advJPath.setSelected(true);
+      advancedJsonPath.setSelected(true);
     });
 
     editor.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -120,7 +139,7 @@ public class PrimaryController {
       char delimiter = value.charAt(0);
       if (delimiter == '<') {
         fileType = FileType.XML;
-        if (jsonPath.isSelected() || advJPath.isSelected()
+        if (jsonPath.isSelected() || advancedJsonPath.isSelected()
             || groupExpression.getSelectedToggle() == null)
           xPath.setSelected(true);
       } else if (delimiter == '{' || delimiter == '[') {
@@ -217,7 +236,7 @@ public class PrimaryController {
     if (expression == null || expression.isBlank() || content == null || content.isBlank())
       return;
     String regex = null;
-    if (advJPath.isSelected())
+    if (advancedJsonPath.isSelected())
       regex = jPathRegex.getText();
 
     String result = null;
@@ -228,7 +247,7 @@ public class PrimaryController {
       result = executeXQuery(content, expression);
     else if (jsonPath.isSelected())
       result = executeJsonPath(content, expression);
-    else if (advJPath.isSelected()) {
+    else if (advancedJsonPath.isSelected()) {
       result = executeAdvacedJsonPath(content, expression, regex);
     }
     resultBox.setText(result);
@@ -244,8 +263,9 @@ public class PrimaryController {
     try {
       DocumentBuilder builder = factory.newDocumentBuilder();
       InputStream stream = new ByteArrayInputStream(xml.getBytes());
-      Document source = builder.parse(stream);
+      Object source = builder.parse(stream);
       XPath xPath = XPathFactory.newInstance().newXPath();
+      source = getCurrentNode(source);
       String value = xPath.compile(expression).evaluate(source);
       return value;
     } catch (Exception e) {
@@ -253,12 +273,20 @@ public class PrimaryController {
     }
   }
 
+  public Object getCurrentNode(Object source) throws XPathExpressionException {
+    XPath xPath = XPathFactory.newInstance().newXPath();
+    if(setCurrentNode.isSelected())
+        source = xPath.compile("//*[@current_node]").evaluate(source, XPathConstants.NODE);
+    return source;
+  }
+
   public String executeXQuery(String xml, String expression) {
 
     try {
       DocumentBuilder builder = factory.newDocumentBuilder();
       InputStream stream = new ByteArrayInputStream(xml.getBytes());
-      Document source = builder.parse(stream);
+      Object source = builder.parse(stream);
+      source = getCurrentNode(source);
       Processor processor = new Processor(false);
       XQueryCompiler compiler = processor.newXQueryCompiler();
       XQueryExecutable executable = compiler.compile(expression);
