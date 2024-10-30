@@ -2,12 +2,9 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -19,22 +16,14 @@
             <Region layoutX="300.0" layoutY="15.0" prefHeight="25.0" prefWidth="80.0" />
             <Label fx:id="fileNameLabel" />
             <Button mnemonicParsing="false" onAction="#loadFile" text="Choose file" />
-            <Region layoutX="389.0" layoutY="15.0" HBox.hgrow="ALWAYS" />
-            <RadioButton mnemonicParsing="false" text="XPath" fx:id="xPath">
-               <toggleGroup>
-                  <ToggleGroup fx:id="groupExpression" />
-               </toggleGroup></RadioButton>
-            <RadioButton mnemonicParsing="false" text="XQuery" toggleGroup="$groupExpression" fx:id="xQuery" />
-            <CheckBox fx:id="setCurrentNode" mnemonicParsing="false" text="Select Node" />
-            <Region layoutX="526.0" layoutY="15.0" HBox.hgrow="ALWAYS" />
-            <RadioButton fx:id="jsonPath" mnemonicParsing="false" text="JPath" toggleGroup="$groupExpression" />
-            <RadioButton fx:id="advancedJsonPath" mnemonicParsing="false" text="Adv. JPath" toggleGroup="$groupExpression" />
+            <Region layoutX="300.0" layoutY="15.0" HBox.hgrow="ALWAYS" />
+            <HBox fx:id="buttonContainer" alignment="CENTER_LEFT" spacing="5.0" HBox.hgrow="ALWAYS" />
             <Region layoutX="705.0" layoutY="15.0" HBox.hgrow="ALWAYS" />
             <Button mnemonicParsing="false" onAction="#formatContent" text="Format" HBox.hgrow="ALWAYS" />
             <Button mnemonicParsing="false" onAction="#clearAllText" text="Clear" />
             <Button mnemonicParsing="false" onAction="#decreaseFontSize" text="A-" />
             <Button mnemonicParsing="false" onAction="#increaseFontSize" text="A+" />
-            <Region layoutX="300.0" layoutY="15.0" HBox.hgrow="ALWAYS" />
+            <Region layoutX="595.0" layoutY="15.0" />
          </children>
          <BorderPane.margin>
             <Insets />
@@ -47,7 +36,7 @@
    <center>
       <SplitPane dividerPositions="0.75" BorderPane.alignment="CENTER">
         <items>
-            <SplitPane dividerPositions="0.1, 0.2" orientation="VERTICAL">
+            <SplitPane fx:id="splitPane" dividerPositions="0.05, 0.05" orientation="VERTICAL">
                <items>
                   <TextArea fx:id="expression" promptText="Enter Query or Path ...." />
                   <TextArea fx:id="jPathRegex" prefHeight="10.0" promptText="Advaced JPath Regex here..." />

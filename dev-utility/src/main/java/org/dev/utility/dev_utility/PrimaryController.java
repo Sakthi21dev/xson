@@ -1,54 +1,31 @@
 package org.dev.utility.dev_utility;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
-import org.w3c.dom.Document;
+import org.dev.utility.dev_utility.services.JsonService;
+import org.dev.utility.dev_utility.services.ToasterService;
+import org.dev.utility.dev_utility.services.XmlService;
 import org.xml.sax.SAXException;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
-import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
-import net.sf.saxon.s9api.Serializer;
-import net.sf.saxon.s9api.XQueryCompiler;
-import net.sf.saxon.s9api.XQueryEvaluator;
-import net.sf.saxon.s9api.XQueryExecutable;
-import net.sf.saxon.s9api.XdmNode;
 
 public class PrimaryController {
 
@@ -56,52 +33,139 @@ public class PrimaryController {
     XML, JSON
   }
 
-  @FXML
-  RadioButton xPath;
+  RadioButton xPath = new RadioButton("XPath");
+
+  RadioButton xQuery = new RadioButton("XQuery");
+
+  CheckBox setCurrentNode = new CheckBox("Current Node");
+
+  RadioButton jsonPath = new RadioButton("JPath");
+
+  RadioButton advancedJsonPath = new RadioButton("Advanced JPath");
+
+  ToggleGroup expressionTypeGroup = new ToggleGroup();
 
   @FXML
-  RadioButton xQuery;
-
-  @FXML
-  RadioButton jsonPath;
-
-  @FXML
-  RadioButton advancedJsonPath;
-
-  @FXML
-  TextArea editor;
-
-  @FXML
-  TextArea expression;
-
-  @FXML
-  TextArea resultBox;
-
-  @FXML
-  ToggleGroup groupExpression;
+  TextArea jPathRegex, editor, expression, resultBox;
 
   @FXML
   Label fileNameLabel;
 
   @FXML
-  TextArea jPathRegex;
+  HBox buttonContainer;
 
   @FXML
-  CheckBox setCurrentNode;
-  
+  SplitPane splitPane;
+
   FileType fileType;
 
-  Configuration jsonReadConfig = Configuration.builder()
-      .jsonProvider(new JacksonJsonNodeJsonProvider()).mappingProvider(new JacksonMappingProvider())
-      .build();
-  DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+  private String lastUsedDirectory = "";
+
   PauseTransition pause;
+
+  public static String setFontSize(double fontSize) {
+    return "-fx-font-size: " + fontSize + "px;";
+  }
+
+  public void changeFontSizeToTextAreaGroup(String fontSizeStyle) {
+    editor.setStyle(fontSizeStyle);
+    expression.setStyle(fontSizeStyle);
+    resultBox.setStyle(fontSizeStyle);
+    jPathRegex.setStyle(fontSizeStyle);
+  }
+
+  public void clearAllText() {
+    editor.clear();
+    expression.clear();
+    resultBox.clear();
+    jPathRegex.clear();
+    fileNameLabel.setText(null);
+    expressionTypeGroup.selectToggle(null);
+    setCurrentNode.setSelected(false);
+  }
+
+  private void clearAndAddButtons(HBox container, Node... buttons) {
+    container.getChildren().clear();
+    container.getChildren().addAll(buttons);
+  }
+
+  public void decreaseFontSize() {
+
+    AppData.fontSize = AppData.fontSize - 2;
+    String fontSizeStyle = setFontSize(AppData.fontSize);
+    changeFontSizeToTextAreaGroup(fontSizeStyle);
+  }
+
+  private String executeAdvacedJsonPath(String content, String expression, String regex) {
+    return JsonService.parseJson(content, expression, regex);
+  }
+
+  public void executeExpression() {
+
+    executeExpression(expression.getText());
+
+  }
+
+  public void executeExpression(String expression) {
+    String content = editor.getText();
+    if (expression == null || expression.isBlank() || content == null || content.isBlank()) {
+      return;
+    }
+    String regex = null;
+    if (advancedJsonPath.isSelected()) {
+      regex = jPathRegex.getText();
+    }
+
+    String result = null;
+
+    if (xPath.isSelected()) {
+      result = XmlService.executeXpath(content, expression, setCurrentNode.isSelected());
+    } else if (xQuery.isSelected()) {
+      result = XmlService.executeXQuery(content, expression, setCurrentNode.isSelected());
+    } else if (jsonPath.isSelected()) {
+      result = JsonService.executeJsonPath(content, expression);
+    } else if (advancedJsonPath.isSelected()) {
+      result = executeAdvacedJsonPath(content, expression, regex);
+    }
+    resultBox.setText(result);
+  }
+
+  @FXML
+  private void formatContent() {
+
+    try {
+      String content = editor.getText();
+      if (content == null || content.isBlank()) {
+        return;
+      }
+
+      if (FileType.XML == fileType) {
+        content = XmlService.formatXml(content);
+        editor.setText(content);
+      } else if (FileType.JSON == fileType) {
+        content = JsonService.formatJson(content);
+        editor.setText(content);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      ToasterService.showToaster(e.getMessage());
+    }
+  }
+
+  public void increaseFontSize() {
+    AppData.fontSize = AppData.fontSize + 2;
+    String fontSizeStyle = setFontSize(AppData.fontSize);
+    changeFontSizeToTextAreaGroup(fontSizeStyle);
+  }
 
   @FXML
   public void initialize() {
-    pause = new PauseTransition(Duration.millis(1000));
+
+    setButtonContainer();
+
+    pause = new PauseTransition(Duration.millis(500));
     pause.setOnFinished(event -> executeExpression());
-    
+
     expression.setOnKeyReleased(event -> {
       pause.playFromStart();
     });
@@ -109,21 +173,29 @@ public class PrimaryController {
     advancedJsonPath.setOnKeyReleased(event -> {
       pause.playFromStart();
     });
-    
+
     editor.setOnKeyReleased(event -> {
       pause.playFromStart();
     });
-    
-    setCurrentNode.selectedProperty().addListener((observable)->{
+
+    setCurrentNode.selectedProperty().addListener((observable) -> {
       executeExpression();
     });
-    
-    groupExpression.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
+
+    expressionTypeGroup.getToggles().addAll(xPath, xQuery, jsonPath, advancedJsonPath);
+
+    expressionTypeGroup.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
       if (newToggle != null) {
-        jPathRegex.setDisable(!advancedJsonPath.isSelected());
+        if ((!splitPane.getItems().contains(jPathRegex)) && advancedJsonPath.isSelected()
+            && FileType.JSON == fileType) {
+          splitPane.getItems().add(1, jPathRegex);
+          splitPane.getDividers().get(1).setPosition(0.05);
+        } else if (splitPane.getItems().contains(jPathRegex)) {
+          splitPane.getItems().remove(jPathRegex);
+        }
         executeExpression();
-      } else {
-        jPathRegex.setDisable(true);
+      } else if (splitPane.getItems().contains(jPathRegex)) {
+        splitPane.getItems().remove(jPathRegex);
       }
     });
 
@@ -136,25 +208,39 @@ public class PrimaryController {
       if (value.isBlank()) {
         return;
       }
-      char delimiter = value.charAt(0);
-      if (delimiter == '<') {
-        fileType = FileType.XML;
-        if (jsonPath.isSelected() || advancedJsonPath.isSelected()
-            || groupExpression.getSelectedToggle() == null)
-          xPath.setSelected(true);
-      } else if (delimiter == '{' || delimiter == '[') {
-        fileType = FileType.JSON;
-        if (xPath.isSelected() || xQuery.isSelected()
-            || groupExpression.getSelectedToggle() == null)
-          jsonPath.setSelected(true);
-      }
+
+      detectContentType(value);
+      // Change buttons appropriate to file
+      setButtonContainer();
+
     });
 
   }
 
+  public void detectContentType(String value) {
+    char delimiter = value.charAt(0);
+    if (delimiter == '<') {
+      fileType = FileType.XML;
+      if (jsonPath.isSelected() || advancedJsonPath.isSelected()
+          || expressionTypeGroup.getSelectedToggle() == null) {
+        xPath.setSelected(true);
+      }
+    } else if (delimiter == '{' || delimiter == '[') {
+      fileType = FileType.JSON;
+      if (xPath.isSelected() || xQuery.isSelected()
+          || expressionTypeGroup.getSelectedToggle() == null) {
+        jsonPath.setSelected(true);
+      }
+    }
+  }
+
   @FXML
   private void loadFile() throws IOException {
+
     FileChooser fileChooser = new FileChooser();
+    if (!lastUsedDirectory.isEmpty()) {
+      fileChooser.setInitialDirectory(new File(lastUsedDirectory));
+    }
     FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
         "XML files (*.xml), JSON files (*.json) ", Arrays.asList("*.xml", "*.json"));
     fileChooser.getExtensionFilters().add(extFilter);
@@ -162,191 +248,45 @@ public class PrimaryController {
     if (file == null) {
       return;
     }
+    lastUsedDirectory = file.getParent();
+    System.out.println("Selected file: " + file.getAbsolutePath());
     fileNameLabel.setText(file.getName());
     loadFileToEditor(file);
+
   }
 
   private void loadFileToEditor(File file) {
 
     try {
-      if (file.getName().endsWith(".json")) {
-        fileType = FileType.JSON;
-        jsonPath.setSelected(true);
-      } else if (file.getName().endsWith(".xml") && jsonPath.isSelected()) {
-        fileType = FileType.XML;
-        xPath.setSelected(true);
-      } else if (file.getName().endsWith(".xml")) {
-        fileType = FileType.XML;
-      }
+//      if (file.getName().endsWith(".json")) {
+//        fileType = FileType.JSON;
+//      } else if (file.getName().endsWith(".xml")) {
+//        fileType = FileType.XML;
+//      }
 
       String context = Files.readString(file.toPath());
       editor.setText(context);
 
     } catch (IOException e) {
+      ToasterService.showToaster(e.getMessage());
       e.printStackTrace();
     }
 
   }
 
-  @FXML
-  private void formatContent() throws Exception {
+  public void setButtonContainer() {
 
-    if (FileType.XML.equals(fileType)) {
-      String content = formatXml(editor.getText());
-      editor.setText(content);
-    } else if (FileType.JSON.equals(fileType)) {
-      String content = formatJson(editor.getText());
-      editor.setText(content);
-    }
+    if (fileType == null || fileType == FileType.XML) {
 
-  }
-
-  public static String formatXml(String xml) throws Exception {
-    Processor processor = new Processor(false);
-    Serializer serializer = processor.newSerializer();
-    serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
-    serializer.setOutputProperty(Serializer.Property.INDENT, "yes");
-    XdmNode source = processor.newDocumentBuilder().build(new StreamSource(new StringReader(xml)));
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    serializer.setOutputStream(byteArrayOutputStream);
-    serializer.serializeNode(source);
-    return byteArrayOutputStream.toString(StandardCharsets.UTF_8);
-  }
-
-  public static String formatJson(String jsonString)
-      throws JsonMappingException, JsonProcessingException {
-    ObjectMapper mapper = new ObjectMapper();
-    Object json = mapper.readValue(jsonString, Object.class);
-    ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
-    return writer.writeValueAsString(json);
-  }
-
-  public void executeExpression() {
-    try {
-      executeExpression(expression.getText());
-    } catch (Exception e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-
-  public void executeExpression(String expression) throws SaxonApiException,
-      ParserConfigurationException, SAXException, IOException, XPathExpressionException {
-    String content = editor.getText();
-    if (expression == null || expression.isBlank() || content == null || content.isBlank())
-      return;
-    String regex = null;
-    if (advancedJsonPath.isSelected())
-      regex = jPathRegex.getText();
-
-    String result = null;
-
-    if (xPath.isSelected())
-      result = executeXpath(content, expression);
-    else if (xQuery.isSelected())
-      result = executeXQuery(content, expression);
-    else if (jsonPath.isSelected())
-      result = executeJsonPath(content, expression);
-    else if (advancedJsonPath.isSelected()) {
-      result = executeAdvacedJsonPath(content, expression, regex);
-    }
-    resultBox.setText(result);
-  }
-
-  private String executeAdvacedJsonPath(String content, String expression, String regex) {
-    // TODO Auto-generated method stub
-    return "!!!--IN DEVELOPMENT--!!!";
-  }
-
-  public String executeXpath(String xml, String expression) {
-
-    try {
-      DocumentBuilder builder = factory.newDocumentBuilder();
-      InputStream stream = new ByteArrayInputStream(xml.getBytes());
-      Object source = builder.parse(stream);
-      XPath xPath = XPathFactory.newInstance().newXPath();
-      source = getCurrentNode(source);
-      String value = xPath.compile(expression).evaluate(source);
-      return value;
-    } catch (Exception e) {
-      return e.getMessage();
-    }
-  }
-
-  public Object getCurrentNode(Object source) throws XPathExpressionException {
-    XPath xPath = XPathFactory.newInstance().newXPath();
-    if(setCurrentNode.isSelected())
-        source = xPath.compile("//*[@current_node]").evaluate(source, XPathConstants.NODE);
-    return source;
-  }
-
-  public String executeXQuery(String xml, String expression) {
-
-    try {
-      DocumentBuilder builder = factory.newDocumentBuilder();
-      InputStream stream = new ByteArrayInputStream(xml.getBytes());
-      Object source = builder.parse(stream);
-      source = getCurrentNode(source);
-      Processor processor = new Processor(false);
-      XQueryCompiler compiler = processor.newXQueryCompiler();
-      XQueryExecutable executable = compiler.compile(expression);
-      XQueryEvaluator evaluator = executable.load();
-      XdmNode xdmNode = processor.newDocumentBuilder().wrap(source);
-      evaluator.setContextItem(xdmNode);
-      return evaluator.evaluate().toString();
-    } catch (Exception e) {
-      return e.getMessage();
-    }
-  }
-
-  public String executeJsonPath(String json, String expression) {
-
-    try {
-
-      Object result = JsonPath.using(jsonReadConfig).parse(json).read(expression);
-      JsonNode resultNode = null;
-      if (result == null)
-        return null;
-      else if (result instanceof JsonNode) {
-        resultNode = (JsonNode) result;
-        return resultNode.toPrettyString();
+      clearAndAddButtons(buttonContainer, xPath, xQuery, setCurrentNode);
+      if (splitPane.getItems().contains(jPathRegex)) {
+        splitPane.getItems().remove(jPathRegex);
+        splitPane.setDividerPosition(0, 0.05);
       }
-      return String.valueOf(result);
-    } catch (Exception e) {
-      return e.getMessage();
+    } else if (fileType == FileType.JSON) {
+      clearAndAddButtons(buttonContainer, jsonPath, advancedJsonPath);
     }
+
   }
 
-  public void increaseFontSize() {
-    AppData.fontSize = AppData.fontSize + 2;
-    String fontSizeStyle = setFontSize(AppData.fontSize);
-    changeFontSizeToTextAreaGroup(fontSizeStyle);
-  }
-
-  public void decreaseFontSize() {
-
-    AppData.fontSize = AppData.fontSize - 2;
-    String fontSizeStyle = setFontSize(AppData.fontSize);
-    changeFontSizeToTextAreaGroup(fontSizeStyle);
-  }
-
-  public void clearAllText() {
-    editor.clear();
-    expression.clear();
-    resultBox.clear();
-    jPathRegex.clear();
-    fileNameLabel.setText(null);
-//    groupExpression.selectToggle(null);
-  }
-
-  public void changeFontSizeToTextAreaGroup(String fontSizeStyle) {
-    editor.setStyle(fontSizeStyle);
-    expression.setStyle(fontSizeStyle);
-    resultBox.setStyle(fontSizeStyle);
-    jPathRegex.setStyle(fontSizeStyle);
-  }
-
-  public static String setFontSize(double fontSize) {
-    return "-fx-font-size: " + fontSize + "px;";
-  }
 }
