@@ -18,11 +18,12 @@ import java.io.IOException;
 public class App extends Application {
 
     private static Scene scene;
-    
+    private static Stage stage;
     
     @Override
     public void start(Stage stage) throws IOException {
         scene = new Scene(loadFXML("home"), 640, 480);
+        this.stage = stage;
         stage.setScene(scene);
         stage.show();
         stage.getIcons().add(new Image(getClass().getResource("/org/dev/utility/dev_utility/img/icon.png").toExternalForm()));
@@ -42,7 +43,7 @@ public class App extends Application {
         launch();
     }
 
-    public static Scene getRoot() {
-        return scene;
+    public static Stage getRoot() {
+        return stage;
     }
 }

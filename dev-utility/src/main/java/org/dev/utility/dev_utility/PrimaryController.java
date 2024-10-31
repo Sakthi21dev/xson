@@ -5,13 +5,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
-
 import org.dev.utility.dev_utility.services.JsonService;
 import org.dev.utility.dev_utility.services.ToasterService;
 import org.dev.utility.dev_utility.services.XmlService;
-import org.xml.sax.SAXException;
 
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
@@ -25,7 +21,6 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
-import net.sf.saxon.s9api.SaxonApiException;
 
 public class PrimaryController {
 
@@ -170,7 +165,7 @@ public class PrimaryController {
       pause.playFromStart();
     });
 
-    advancedJsonPath.setOnKeyReleased(event -> {
+    jPathRegex.setOnKeyReleased(event -> {
       pause.playFromStart();
     });
 
@@ -244,7 +239,7 @@ public class PrimaryController {
     FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
         "XML files (*.xml), JSON files (*.json) ", Arrays.asList("*.xml", "*.json"));
     fileChooser.getExtensionFilters().add(extFilter);
-    File file = fileChooser.showOpenDialog(App.getRoot().getWindow());
+    File file = fileChooser.showOpenDialog(App.getRoot());
     if (file == null) {
       return;
     }
@@ -258,15 +253,9 @@ public class PrimaryController {
   private void loadFileToEditor(File file) {
 
     try {
-//      if (file.getName().endsWith(".json")) {
-//        fileType = FileType.JSON;
-//      } else if (file.getName().endsWith(".xml")) {
-//        fileType = FileType.XML;
-//      }
 
       String context = Files.readString(file.toPath());
       editor.setText(context);
-
     } catch (IOException e) {
       ToasterService.showToaster(e.getMessage());
       e.printStackTrace();

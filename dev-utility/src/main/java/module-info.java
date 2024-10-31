@@ -9,6 +9,7 @@ module org.dev.utility.dev_utility {
   requires java.logging;
   requires java.desktop;
 
+
   opens org.dev.utility.dev_utility to javafx.fxml;
 
   exports org.dev.utility.dev_utility;
